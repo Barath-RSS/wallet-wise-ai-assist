@@ -1,22 +1,21 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Receipt, BarChart3, MessageSquare, Wallet, Upload, TrendingUp, DollarSign, Target, PiggyBank, Calculator } from 'lucide-react';
+import { Receipt, BarChart3, MessageSquare, Wallet, Upload, TrendingUp, DollarSign, Target, PiggyBank, Calculator, CreditCard, Smartphone, Building, Plus, CheckCircle } from 'lucide-react';
 import FeatureCard from '@/components/FeatureCard';
 import BudgetManager from '@/components/BudgetManager';
-import MoneyAnimation from '@/components/MoneyAnimation';
 import { useScrollAnimation, useStaggeredAnimation } from '@/hooks/useScrollAnimation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [showMoneyAnimation, setShowMoneyAnimation] = useState(false);
-  const [animationType, setAnimationType] = useState<'spend' | 'save' | 'earn'>('spend');
-  const [animationAmount, setAnimationAmount] = useState(0);
+  const [connectedAccounts, setConnectedAccounts] = useState<string[]>([]);
+  const [showBankingModal, setShowBankingModal] = useState(false);
 
   const { ref: heroRef, isVisible: heroVisible } = useScrollAnimation();
   const { ref: statsRef, isVisible: statsVisible } = useScrollAnimation();
+  const { ref: bankingRef, isVisible: bankingVisible } = useScrollAnimation();
   const { containerRef: featuresRef, visibleItems: featuresVisible } = useStaggeredAnimation(6, 0.15);
 
   const quickStats = [
@@ -26,27 +25,26 @@ const Dashboard: React.FC = () => {
     { label: 'Active Goals', value: '3', change: '0%', trend: 'neutral' },
   ];
 
+  const bankingOptions = [
+    { id: 'bank', name: 'Bank Account', icon: Building, description: 'Connect your bank account for automatic transaction tracking' },
+    { id: 'upi', name: 'UPI Apps', icon: Smartphone, description: 'Link UPI apps like Google Pay, PhonePe, Paytm' },
+    { id: 'card', name: 'Credit Cards', icon: CreditCard, description: 'Add credit and debit cards for expense monitoring' },
+  ];
+
   const recentActivities = [
     { type: 'receipt', description: 'Walmart receipt processed', amount: '$45.67', time: '2 hours ago' },
     { type: 'insight', description: 'Savings opportunity identified', amount: '$12.30', time: '5 hours ago' },
     { type: 'goal', description: 'Monthly budget goal updated', amount: '$800.00', time: '1 day ago' },
   ];
 
-  const triggerMoneyAnimation = (type: 'spend' | 'save' | 'earn', amount: number) => {
-    setAnimationType(type);
-    setAnimationAmount(amount);
-    setShowMoneyAnimation(true);
-    setTimeout(() => setShowMoneyAnimation(false), 100);
+  const connectAccount = (accountType: string) => {
+    // This would normally integrate with actual banking APIs
+    setConnectedAccounts(prev => [...prev, accountType]);
+    setShowBankingModal(false);
   };
 
   return (
-    <div className="min-h-screen pt-24 pb-8 px-4">
-      <MoneyAnimation 
-        trigger={showMoneyAnimation} 
-        amount={animationAmount} 
-        type={animationType} 
-      />
-      
+    <div className="min-h-screen pt-20 pb-8 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Welcome Section */}
         <div 
@@ -63,6 +61,85 @@ const Dashboard: React.FC = () => {
           </p>
         </div>
 
+        {/* Banking Connection Section */}
+        <div 
+          ref={bankingRef}
+          className={`mb-12 transition-all duration-1000 ${
+            bankingVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          }`}
+        >
+          <Card className="glass-card">
+            <CardHeader>
+              <CardTitle className="text-2xl font-bold gradient-text flex items-center">
+                <Wallet className="w-6 h-6 mr-2" />
+                Connect Your Financial Accounts
+              </CardTitle>
+              <p className="text-muted-foreground">
+                Link your bank accounts and payment apps to enable AI-powered expense tracking
+              </p>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {bankingOptions.map((option) => {
+                  const Icon = option.icon;
+                  const isConnected = connectedAccounts.includes(option.id);
+                  
+                  return (
+                    <div
+                      key={option.id}
+                      className={`p-6 rounded-xl border-2 transition-all duration-300 cursor-pointer hover-lift ${
+                        isConnected 
+                          ? 'border-green-500 bg-green-50 dark:bg-green-900/20' 
+                          : 'border-gray-200 dark:border-gray-700 hover:border-blue-500'
+                      }`}
+                      onClick={() => !isConnected && connectAccount(option.id)}
+                    >
+                      <div className="text-center">
+                        <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                          isConnected 
+                            ? 'bg-green-500' 
+                            : 'bg-gradient-to-r from-blue-500 to-purple-600'
+                        }`}>
+                          {isConnected ? (
+                            <CheckCircle className="w-8 h-8 text-white" />
+                          ) : (
+                            <Icon className="w-8 h-8 text-white" />
+                          )}
+                        </div>
+                        <h3 className="text-lg font-semibold mb-2">{option.name}</h3>
+                        <p className="text-sm text-muted-foreground mb-4">{option.description}</p>
+                        
+                        {isConnected ? (
+                          <Button disabled className="w-full bg-green-500">
+                            <CheckCircle className="w-4 h-4 mr-2" />
+                            Connected
+                          </Button>
+                        ) : (
+                          <Button className="w-full">
+                            <Plus className="w-4 h-4 mr-2" />
+                            Connect
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              
+              {connectedAccounts.length === 0 && (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground mb-4">
+                    No accounts connected yet. Connect your first account to start tracking expenses.
+                  </p>
+                  <Button variant="outline" onClick={() => setShowBankingModal(true)}>
+                    Skip for Now
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
         {/* Quick Stats */}
         <div 
           ref={statsRef}
@@ -74,7 +151,6 @@ const Dashboard: React.FC = () => {
             <Card 
               key={index} 
               className={`glass-card hover-lift floating-card animate-bounce-in animate-stagger-${index + 1}`}
-              onClick={() => triggerMoneyAnimation('spend', Math.random() * 100)}
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -107,13 +183,10 @@ const Dashboard: React.FC = () => {
               icon={Receipt}
               title="Smart Receipt Scanner"
               description="Upload and analyze receipts with AI"
-              onClick={() => {
-                triggerMoneyAnimation('spend', 45.67);
-                setTimeout(() => navigate('/receipt-scanner'), 500);
-              }}
+              onClick={() => navigate('/receipt-scanner')}
               className="animate-float"
             >
-              <Button className="w-full mt-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 wobble hover:wobble">
+              <Button className="w-full mt-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
                 <Upload className="w-4 h-4 mr-2" />
                 Scan Receipt
               </Button>
@@ -127,7 +200,6 @@ const Dashboard: React.FC = () => {
               description="Track expenses and identify patterns"
               onClick={() => navigate('/analytics')}
               className="animate-float"
-              style={{ animationDelay: '0.5s' }}
             >
               <div className="mt-4 space-y-2">
                 <div className="flex justify-between text-sm">
@@ -148,7 +220,6 @@ const Dashboard: React.FC = () => {
               description="Chat with your financial advisor"
               onClick={() => navigate('/ai-assistant')}
               className="animate-float"
-              style={{ animationDelay: '1s' }}
             >
               <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse">
                 <p className="text-sm text-muted-foreground">
@@ -163,20 +234,10 @@ const Dashboard: React.FC = () => {
               icon={PiggyBank}
               title="Budget Planner"
               description="Set and track spending limits"
-              onClick={() => {
-                triggerMoneyAnimation('save', 150.00);
-                setTimeout(() => navigate('/analytics'), 500);
-              }}
+              onClick={() => navigate('/analytics')}
               className="animate-float"
-              style={{ animationDelay: '1.5s' }}
             >
-              <Button 
-                className="w-full mt-4 bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 animate-glow"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  triggerMoneyAnimation('save', 200);
-                }}
-              >
+              <Button className="w-full mt-4 bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 animate-glow">
                 <Calculator className="w-4 h-4 mr-2" />
                 Manage Budget
               </Button>
@@ -188,12 +249,8 @@ const Dashboard: React.FC = () => {
               icon={Target}
               title="Savings Goals"
               description="Set and track financial objectives"
-              onClick={() => {
-                triggerMoneyAnimation('earn', 75.00);
-                setTimeout(() => navigate('/analytics'), 500);
-              }}
+              onClick={() => navigate('/analytics')}
               className="animate-float"
-              style={{ animationDelay: '2s' }}
             >
               <div className="mt-4">
                 <div className="flex justify-between text-sm mb-2">
@@ -214,7 +271,6 @@ const Dashboard: React.FC = () => {
               description="AI-powered financial recommendations"
               onClick={() => navigate('/analytics')}
               className="animate-float"
-              style={{ animationDelay: '2.5s' }}
             >
               <div className="mt-4 p-3 bg-green-100 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 animate-glow">
                 <p className="text-sm text-green-700 dark:text-green-300">
@@ -236,7 +292,6 @@ const Dashboard: React.FC = () => {
                 <div 
                   key={index} 
                   className={`flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg floating-card animate-slide-in-right animate-stagger-${index + 1}`}
-                  onClick={() => triggerMoneyAnimation('spend', parseFloat(activity.amount.replace('$', '')))}
                 >
                   <div className="flex items-center space-x-3">
                     <div className={`w-2 h-2 rounded-full animate-pulse ${activity.type === 'receipt' ? 'bg-blue-500' : activity.type === 'insight' ? 'bg-green-500' : 'bg-purple-500'}`}></div>

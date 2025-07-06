@@ -6,6 +6,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import Navigation from "@/components/Navigation";
+import Landing from "@/pages/Landing";
+import Onboarding from "@/pages/Onboarding";
 import Dashboard from "@/pages/Dashboard";
 import ReceiptScanner from "@/pages/ReceiptScanner";
 import Analytics from "@/pages/Analytics";
@@ -24,14 +26,63 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <div className="min-h-screen w-full">
-            <Navigation />
             <Routes>
-              <Route path="/" element={<Dashboard />} />
-              <Route path="/receipt-scanner" element={<ReceiptScanner />} />
-              <Route path="/analytics" element={<Analytics />} />
-              <Route path="/ai-assistant" element={<AIAssistant />} />
-              <Route path="/wallet" element={<WalletPasses />} />
-              <Route path="/settings" element={<Settings />} />
+              <Route path="/" element={<Landing />} />
+              <Route path="/onboarding" element={<Onboarding />} />
+              <Route 
+                path="/dashboard" 
+                element={
+                  <>
+                    <Navigation />
+                    <Dashboard />
+                  </>
+                } 
+              />
+              <Route 
+                path="/receipt-scanner" 
+                element={
+                  <>
+                    <Navigation />
+                    <ReceiptScanner />
+                  </>
+                } 
+              />
+              <Route 
+                path="/analytics" 
+                element={
+                  <>
+                    <Navigation />
+                    <Analytics />
+                  </>
+                } 
+              />
+              <Route 
+                path="/ai-assistant" 
+                element={
+                  <>
+                    <Navigation />
+                    <AIAssistant />
+                  </>
+                } 
+              />
+              <Route 
+                path="/wallet" 
+                element={
+                  <>
+                    <Navigation />
+                    <WalletPasses />
+                  </>
+                } 
+              />
+              <Route 
+                path="/settings" 
+                element={
+                  <>
+                    <Navigation />
+                    <Settings />
+                  </>
+                } 
+              />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
