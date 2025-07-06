@@ -4,13 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { Receipt, BarChart3, MessageSquare, Wallet, Upload, TrendingUp, DollarSign, Target, PiggyBank, Calculator, CreditCard, Smartphone, Building, Plus, CheckCircle } from 'lucide-react';
 import FeatureCard from '@/components/FeatureCard';
 import BudgetManager from '@/components/BudgetManager';
+import BankingModal from '@/components/BankingModal';
 import { useScrollAnimation, useStaggeredAnimation } from '@/hooks/useScrollAnimation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
-  const [connectedAccounts, setConnectedAccounts] = useState<string[]>([]);
+  const [connectedAccounts, setConnectedAccounts] = useState<Array<{type: string, name: string}>>([]);
   const [showBankingModal, setShowBankingModal] = useState(false);
 
   const { ref: heroRef, isVisible: heroVisible } = useScrollAnimation();
@@ -19,10 +20,10 @@ const Dashboard: React.FC = () => {
   const { containerRef: featuresRef, visibleItems: featuresVisible } = useStaggeredAnimation(6, 0.15);
 
   const quickStats = [
-    { label: 'This Month Spending', value: '$1,247.50', change: '+12%', trend: 'up' },
-    { label: 'Receipts Processed', value: '84', change: '+23%', trend: 'up' },
-    { label: 'Savings Identified', value: '$127.30', change: '+8%', trend: 'up' },
-    { label: 'Active Goals', value: '3', change: '0%', trend: 'neutral' },
+    { label: 'This Month Spending', value: '$0.00', change: '0%', trend: 'neutral' },
+    { label: 'Receipts Processed', value: '0', change: '0%', trend: 'neutral' },
+    { label: 'Savings Identified', value: '$0.00', change: '0%', trend: 'neutral' },
+    { label: 'Active Goals', value: '0', change: '0%', trend: 'neutral' },
   ];
 
   const bankingOptions = [
@@ -31,20 +32,18 @@ const Dashboard: React.FC = () => {
     { id: 'card', name: 'Credit Cards', icon: CreditCard, description: 'Add credit and debit cards for expense monitoring' },
   ];
 
-  const recentActivities = [
-    { type: 'receipt', description: 'Walmart receipt processed', amount: '$45.67', time: '2 hours ago' },
-    { type: 'insight', description: 'Savings opportunity identified', amount: '$12.30', time: '5 hours ago' },
-    { type: 'goal', description: 'Monthly budget goal updated', amount: '$800.00', time: '1 day ago' },
-  ];
-
-  const connectAccount = (accountType: string) => {
-    // This would normally integrate with actual banking APIs
-    setConnectedAccounts(prev => [...prev, accountType]);
+  const connectAccount = (type: string, name: string) => {
+    const newAccount = { type, name };
+    setConnectedAccounts(prev => [...prev, newAccount]);
     setShowBankingModal(false);
   };
 
+  const openBankingModal = () => {
+    setShowBankingModal(true);
+  };
+
   return (
-    <div className="min-h-screen pt-20 pb-8 px-4">
+    <div className="min-h-screen pt-20 pb-8 px-4 cursor-custom">
       <div className="max-w-7xl mx-auto">
         {/* Welcome Section */}
         <div 
@@ -82,7 +81,8 @@ const Dashboard: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {bankingOptions.map((option) => {
                   const Icon = option.icon;
-                  const isConnected = connectedAccounts.includes(option.id);
+                  const connectedAccount = connectedAccounts.find(acc => acc.type === option.id);
+                  const isConnected = !!connectedAccount;
                   
                   return (
                     <div
@@ -92,7 +92,7 @@ const Dashboard: React.FC = () => {
                           ? 'border-green-500 bg-green-50 dark:bg-green-900/20' 
                           : 'border-gray-200 dark:border-gray-700 hover:border-blue-500'
                       }`}
-                      onClick={() => !isConnected && connectAccount(option.id)}
+                      onClick={() => !isConnected && openBankingModal()}
                     >
                       <div className="text-center">
                         <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
@@ -110,12 +110,17 @@ const Dashboard: React.FC = () => {
                         <p className="text-sm text-muted-foreground mb-4">{option.description}</p>
                         
                         {isConnected ? (
-                          <Button disabled className="w-full bg-green-500">
-                            <CheckCircle className="w-4 h-4 mr-2" />
-                            Connected
-                          </Button>
+                          <div>
+                            <Button disabled className="w-full bg-green-500 mb-2">
+                              <CheckCircle className="w-4 h-4 mr-2" />
+                              Connected
+                            </Button>
+                            <p className="text-xs text-green-600 dark:text-green-400">
+                              {connectedAccount?.name}
+                            </p>
+                          </div>
                         ) : (
-                          <Button className="w-full">
+                          <Button className="w-full" onClick={openBankingModal}>
                             <Plus className="w-4 h-4 mr-2" />
                             Connect
                           </Button>
@@ -131,7 +136,7 @@ const Dashboard: React.FC = () => {
                   <p className="text-muted-foreground mb-4">
                     No accounts connected yet. Connect your first account to start tracking expenses.
                   </p>
-                  <Button variant="outline" onClick={() => setShowBankingModal(true)}>
+                  <Button variant="outline" onClick={() => navigate('/receipt-scanner')}>
                     Skip for Now
                   </Button>
                 </div>
@@ -201,14 +206,10 @@ const Dashboard: React.FC = () => {
               onClick={() => navigate('/analytics')}
               className="animate-float"
             >
-              <div className="mt-4 space-y-2">
-                <div className="flex justify-between text-sm">
-                  <span>Groceries</span>
-                  <span>$456.78</span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full animate-pulse" style={{ width: '65%' }}></div>
-                </div>
+              <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                <p className="text-sm text-muted-foreground text-center">
+                  Connect accounts to view analytics
+                </p>
               </div>
             </FeatureCard>
           </div>
@@ -221,9 +222,9 @@ const Dashboard: React.FC = () => {
               onClick={() => navigate('/ai-assistant')}
               className="animate-float"
             >
-              <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg animate-pulse">
+              <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
                 <p className="text-sm text-muted-foreground">
-                  "How much did I spend on groceries this week?"
+                  "Connect your accounts first to get started"
                 </p>
               </div>
             </FeatureCard>
@@ -239,7 +240,7 @@ const Dashboard: React.FC = () => {
             >
               <Button className="w-full mt-4 bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 animate-glow">
                 <Calculator className="w-4 h-4 mr-2" />
-                Manage Budget
+                Create Budget
               </Button>
             </FeatureCard>
           </div>
@@ -252,14 +253,10 @@ const Dashboard: React.FC = () => {
               onClick={() => navigate('/analytics')}
               className="animate-float"
             >
-              <div className="mt-4">
-                <div className="flex justify-between text-sm mb-2">
-                  <span>Vacation Fund</span>
-                  <span>75%</span>
-                </div>
-                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                  <div className="bg-gradient-to-r from-green-500 to-blue-600 h-2 rounded-full animate-pulse" style={{ width: '75%' }}></div>
-                </div>
+              <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
+                <p className="text-sm text-muted-foreground text-center">
+                  Set your first savings goal
+                </p>
               </div>
             </FeatureCard>
           </div>
@@ -272,41 +269,64 @@ const Dashboard: React.FC = () => {
               onClick={() => navigate('/analytics')}
               className="animate-float"
             >
-              <div className="mt-4 p-3 bg-green-100 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-800 animate-glow">
-                <p className="text-sm text-green-700 dark:text-green-300">
-                  💡 You could save $23 by switching brands
+              <div className="mt-4 p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <p className="text-sm text-blue-600 dark:text-blue-400 text-center">
+                  Connect accounts to get insights
                 </p>
               </div>
             </FeatureCard>
           </div>
         </div>
 
-        {/* Recent Activity */}
+        {/* Getting Started Guide */}
         <Card className="glass-card animate-slide-up">
           <CardHeader>
-            <CardTitle className="text-xl font-semibold">Recent Activity</CardTitle>
+            <CardTitle className="text-xl font-semibold">Getting Started</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {recentActivities.map((activity, index) => (
-                <div 
-                  key={index} 
-                  className={`flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg floating-card animate-slide-in-right animate-stagger-${index + 1}`}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-2 h-2 rounded-full animate-pulse ${activity.type === 'receipt' ? 'bg-blue-500' : activity.type === 'insight' ? 'bg-green-500' : 'bg-purple-500'}`}></div>
-                    <div>
-                      <p className="text-sm font-medium">{activity.description}</p>
-                      <p className="text-xs text-muted-foreground">{activity.time}</p>
-                    </div>
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                  <div>
+                    <p className="text-sm font-medium">Connect your first account</p>
+                    <p className="text-xs text-muted-foreground">Link a bank account or UPI app to start tracking</p>
                   </div>
-                  <span className="text-sm font-semibold hover:scale-110 transition-transform">{activity.amount}</span>
                 </div>
-              ))}
+                <Button size="sm" onClick={openBankingModal}>Connect</Button>
+              </div>
+              
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg opacity-50">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                  <div>
+                    <p className="text-sm font-medium">Upload your first receipt</p>
+                    <p className="text-xs text-muted-foreground">Scan a receipt to see AI analysis</p>
+                  </div>
+                </div>
+                <Button size="sm" variant="outline" disabled>Coming Next</Button>
+              </div>
+              
+              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg opacity-50">
+                <div className="flex items-center space-x-3">
+                  <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                  <div>
+                    <p className="text-sm font-medium">Set your budget goals</p>
+                    <p className="text-xs text-muted-foreground">Create spending limits and savings targets</p>
+                  </div>
+                </div>
+                <Button size="sm" variant="outline" disabled>Coming Soon</Button>
+              </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      <BankingModal 
+        isOpen={showBankingModal}
+        onClose={() => setShowBankingModal(false)}
+        onConnect={connectAccount}
+      />
     </div>
   );
 };

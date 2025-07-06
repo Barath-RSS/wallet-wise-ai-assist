@@ -8,7 +8,7 @@ const Navigation: React.FC = () => {
   const location = useLocation();
 
   const navItems = [
-    { path: '/', icon: Home, label: 'Dashboard' },
+    { path: '/dashboard', icon: Home, label: 'Dashboard' },
     { path: '/receipt-scanner', icon: Receipt, label: 'Receipt Scanner' },
     { path: '/analytics', icon: BarChart3, label: 'Analytics' },
     { path: '/ai-assistant', icon: MessageSquare, label: 'AI Assistant' },
