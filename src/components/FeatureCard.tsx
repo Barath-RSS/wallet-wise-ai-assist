@@ -8,6 +8,7 @@ interface FeatureCardProps {
   description: string;
   onClick?: () => void;
   className?: string;
+  style?: React.CSSProperties;
   children?: React.ReactNode;
 }
 
@@ -17,12 +18,14 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
   description,
   onClick,
   className = '',
+  style,
   children
 }) => {
   return (
     <div
       className={`glass-card p-6 hover-lift cursor-pointer transition-all duration-300 hover:bg-gradient-to-br hover:from-blue-500/10 hover:to-purple-500/10 hover:border-blue-500/30 hover:shadow-2xl hover:shadow-blue-500/20 ${className}`}
       onClick={onClick}
+      style={style}
     >
       <div className="flex items-center space-x-4 mb-4">
         <div className="p-3 bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl animate-glow">
