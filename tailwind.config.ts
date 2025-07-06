@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -61,7 +62,11 @@ export default {
 					'accent-foreground': 'hsl(var(--sidebar-accent-foreground))',
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
-				}
+				},
+				'wallet-primary': '#4285f4',
+				'wallet-secondary': '#34a853',
+				'wallet-accent': '#fbbc05',
+				'wallet-danger': '#ea4335',
 			},
 			borderRadius: {
 				lg: 'var(--radius)',
@@ -84,13 +89,71 @@ export default {
 					to: {
 						height: '0'
 					}
+				},
+				'fade-in': {
+					'0%': {
+						opacity: '0',
+						transform: 'translateY(10px)'
+					},
+					'100%': {
+						opacity: '1',
+						transform: 'translateY(0)'
+					}
+				},
+				'scale-in': {
+					'0%': {
+						transform: 'scale(0.95)',
+						opacity: '0'
+					},
+					'100%': {
+						transform: 'scale(1)',
+						opacity: '1'
+					}
+				},
+				'glow': {
+					'0%, 100%': {
+						boxShadow: '0 0 20px rgba(66, 133, 244, 0.3)'
+					},
+					'50%': {
+						boxShadow: '0 0 40px rgba(66, 133, 244, 0.6)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fade-in 0.3s ease-out',
+				'scale-in': 'scale-in 0.2s ease-out',
+				'glow': 'glow 2s ease-in-out infinite'
+			},
+			backdropBlur: {
+				xs: '2px',
 			}
 		}
 	},
-	plugins: [require("tailwindcss-animate")],
+	plugins: [
+		require("tailwindcss-animate"),
+		function({ addUtilities }: any) {
+			const newUtilities = {
+				'.glass': {
+					background: 'rgba(255, 255, 255, 0.1)',
+					backdropFilter: 'blur(10px)',
+					border: '1px solid rgba(255, 255, 255, 0.2)',
+				},
+				'.glass-dark': {
+					background: 'rgba(0, 0, 0, 0.1)',
+					backdropFilter: 'blur(10px)',
+					border: '1px solid rgba(255, 255, 255, 0.1)',
+				},
+				'.hover-lift': {
+					transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+					'&:hover': {
+						transform: 'translateY(-5px)',
+						boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)',
+					}
+				}
+			}
+			addUtilities(newUtilities)
+		}
+	],
 } satisfies Config;
