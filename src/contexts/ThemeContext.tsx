@@ -25,8 +25,24 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   useEffect(() => {
     const root = window.document.documentElement;
+    
+    // Remove existing theme classes
     root.classList.remove('light', 'dark');
+    
+    // Add new theme class
     root.classList.add(theme);
+    
+    // Update CSS custom properties for dynamic theming
+    if (theme === 'dark') {
+      root.style.setProperty('--theme-bg', '222.2 84% 4.9%');
+      root.style.setProperty('--theme-text', '210 40% 98%');
+      root.style.setProperty('--theme-accent', '217.2 32.6% 17.5%');
+    } else {
+      root.style.setProperty('--theme-bg', '0 0% 100%');
+      root.style.setProperty('--theme-text', '222.2 84% 4.9%');
+      root.style.setProperty('--theme-accent', '210 40% 96%');
+    }
+    
     localStorage.setItem('theme', theme);
   }, [theme]);
 
