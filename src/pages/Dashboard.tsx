@@ -1,35 +1,44 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Receipt, BarChart3, MessageSquare, Wallet, Upload, TrendingUp, DollarSign, Target, PiggyBank, Calculator, CreditCard, Smartphone, Building, Plus, CheckCircle } from 'lucide-react';
+import { Receipt, BarChart3, MessageSquare, Wallet, Upload, TrendingUp, DollarSign, Target, PiggyBank, Calculator, CreditCard, Smartphone, Building, Plus, CheckCircle, ArrowUp, ArrowDown, Activity, Users, Zap, Eye, EyeOff } from 'lucide-react';
 import FeatureCard from '@/components/FeatureCard';
 import BudgetManager from '@/components/BudgetManager';
 import BankingModal from '@/components/BankingModal';
 import { useScrollAnimation, useStaggeredAnimation } from '@/hooks/useScrollAnimation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [connectedAccounts, setConnectedAccounts] = useState<Array<{type: string, name: string}>>([]);
   const [showBankingModal, setShowBankingModal] = useState(false);
+  const [balanceVisible, setBalanceVisible] = useState(true);
 
   const { ref: heroRef, isVisible: heroVisible } = useScrollAnimation();
   const { ref: statsRef, isVisible: statsVisible } = useScrollAnimation();
-  const { ref: bankingRef, isVisible: bankingVisible } = useScrollAnimation();
   const { containerRef: featuresRef, visibleItems: featuresVisible } = useStaggeredAnimation(6, 0.15);
 
-  const quickStats = [
-    { label: 'This Month Spending', value: '$0.00', change: '0%', trend: 'neutral' },
-    { label: 'Receipts Processed', value: '0', change: '0%', trend: 'neutral' },
-    { label: 'Savings Identified', value: '$0.00', change: '0%', trend: 'neutral' },
-    { label: 'Active Goals', value: '0', change: '0%', trend: 'neutral' },
+  const mainStats = [
+    { label: 'Total Balance', value: '₹1,17,650', change: '+12.5%', trend: 'up', gradient: 'from-blue-500 to-purple-600' },
+    { label: 'Monthly Spending', value: '₹45,280', change: '-5.2%', trend: 'down', gradient: 'from-purple-500 to-pink-600' },
+    { label: 'Savings Goal', value: '₹2,50,000', change: '68%', trend: 'up', gradient: 'from-green-500 to-blue-500' },
+    { label: 'Investments', value: '₹85,430', change: '+18.7%', trend: 'up', gradient: 'from-orange-500 to-red-500' },
   ];
 
-  const bankingOptions = [
-    { id: 'bank', name: 'Bank Account', icon: Building, description: 'Connect your bank account for automatic transaction tracking' },
-    { id: 'upi', name: 'UPI Apps', icon: Smartphone, description: 'Link UPI apps like Google Pay, PhonePe, Paytm' },
-    { id: 'card', name: 'Credit Cards', icon: CreditCard, description: 'Add credit and debit cards for expense monitoring' },
+  const recentTransactions = [
+    { name: 'Swiggy Food Order', amount: '-₹420', time: '2 hours ago', category: 'Food', color: 'text-red-400' },
+    { name: 'Salary Credit', amount: '+₹75,000', time: '1 day ago', category: 'Income', color: 'text-green-400' },
+    { name: 'Uber Ride', amount: '-₹180', time: '3 days ago', category: 'Transport', color: 'text-red-400' },
+    { name: 'Netflix Subscription', amount: '-₹799', time: '5 days ago', category: 'Entertainment', color: 'text-red-400' },
+  ];
+
+  const quickActions = [
+    { title: 'Send Money', icon: ArrowUp, action: () => console.log('Send Money'), gradient: 'from-blue-500 to-cyan-500' },
+    { title: 'Request Money', icon: ArrowDown, action: () => console.log('Request Money'), gradient: 'from-green-500 to-emerald-500' },
+    { title: 'Pay Bills', icon: Zap, action: () => console.log('Pay Bills'), gradient: 'from-purple-500 to-violet-500' },
+    { title: 'Investments', icon: TrendingUp, action: () => console.log('Investments'), gradient: 'from-orange-500 to-red-500' },
   ];
 
   const connectAccount = (type: string, name: string) => {
@@ -43,145 +52,186 @@ const Dashboard: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen pt-20 pb-8 px-4 cursor-custom">
+    <div className="min-h-screen pt-20 pb-8 px-4 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 cursor-custom">
       <div className="max-w-7xl mx-auto">
         {/* Welcome Section */}
         <div 
           ref={heroRef}
-          className={`text-center mb-12 transition-all duration-1000 ${
+          className={`text-center mb-8 transition-all duration-1000 ${
             heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           }`}
         >
-          <h1 className="text-4xl md:text-6xl font-bold gradient-text mb-4 animate-fade-in">
-            Welcome to Project Raseed
+          <h1 className="text-4xl md:text-5xl font-bold gradient-text mb-4 animate-fade-in">
+            Financial Dashboard
           </h1>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto animate-delayed-fade">
-            Your AI-powered financial assistant for smart receipt management and spending insights
+          <p className="text-xl text-gray-300 max-w-3xl mx-auto animate-delayed-fade">
+            Your complete financial overview at a glance
           </p>
         </div>
 
-        {/* Banking Connection Section */}
+        {/* Main Stats Grid */}
         <div 
-          ref={bankingRef}
-          className={`mb-12 transition-all duration-1000 ${
-            bankingVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          ref={statsRef}
+          className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 transition-all duration-1000 ${
+            statsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           }`}
         >
-          <Card className="glass-card">
+          {mainStats.map((stat, index) => (
+            <Card 
+              key={index} 
+              className={`bg-gradient-to-br ${stat.gradient} p-1 rounded-2xl hover-lift floating-card animate-bounce-in animate-stagger-${index + 1}`}
+            >
+              <div className="bg-black/20 backdrop-blur-xl rounded-xl p-6 h-full">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="p-2 bg-white/10 rounded-lg">
+                    {stat.trend === 'up' ? (
+                      <TrendingUp className="h-5 w-5 text-white" />
+                    ) : (
+                      <ArrowDown className="h-5 w-5 text-white" />
+                    )}
+                  </div>
+                  <div className={`text-xs px-2 py-1 rounded-full ${
+                    stat.trend === 'up' ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'
+                  }`}>
+                    {stat.change}
+                  </div>
+                </div>
+                <div>
+                  <p className="text-white/70 text-sm mb-1">{stat.label}</p>
+                  <p className="text-2xl font-bold text-white">
+                    {stat.label.includes('Balance') && !balanceVisible ? '••••••' : stat.value}
+                  </p>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+
+        {/* Quick Actions */}
+        <Card className="glass-card mb-8 bg-white/5 backdrop-blur-xl border-white/10">
+          <CardHeader>
+            <CardTitle className="text-white flex items-center">
+              <Activity className="w-5 h-5 mr-2 text-blue-400" />
+              Quick Actions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {quickActions.map((action, index) => {
+                const Icon = action.icon;
+                return (
+                  <Button
+                    key={index}
+                    onClick={action.action}
+                    className={`bg-gradient-to-r ${action.gradient} hover:scale-105 transition-all duration-300 p-6 h-auto flex-col space-y-2 animate-glow`}
+                  >
+                    <Icon className="w-6 h-6" />
+                    <span className="text-sm">{action.title}</span>
+                  </Button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Banking Connection & Recent Transactions */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+          {/* Banking Connection */}
+          <Card className="glass-card bg-white/5 backdrop-blur-xl border-white/10">
             <CardHeader>
-              <CardTitle className="text-2xl font-bold gradient-text flex items-center">
-                <Wallet className="w-6 h-6 mr-2" />
-                Connect Your Financial Accounts
+              <CardTitle className="text-white flex items-center justify-between">
+                <div className="flex items-center">
+                  <Wallet className="w-5 h-5 mr-2 text-green-400" />
+                  Connected Accounts
+                </div>
+                <Button
+                  size="sm"
+                  onClick={() => setBalanceVisible(!balanceVisible)}
+                  variant="ghost"
+                  className="text-white/70 hover:text-white"
+                >
+                  {balanceVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                </Button>
               </CardTitle>
-              <p className="text-muted-foreground">
-                Link your bank accounts and payment apps to enable AI-powered expense tracking
-              </p>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {bankingOptions.map((option) => {
-                  const Icon = option.icon;
-                  const connectedAccount = connectedAccounts.find(acc => acc.type === option.id);
-                  const isConnected = !!connectedAccount;
-                  
-                  return (
-                    <div
-                      key={option.id}
-                      className={`p-6 rounded-xl border-2 transition-all duration-300 cursor-pointer hover-lift ${
-                        isConnected 
-                          ? 'border-green-500 bg-green-50 dark:bg-green-900/20' 
-                          : 'border-gray-200 dark:border-gray-700 hover:border-blue-500'
-                      }`}
-                      onClick={() => !isConnected && openBankingModal()}
-                    >
-                      <div className="text-center">
-                        <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
-                          isConnected 
-                            ? 'bg-green-500' 
-                            : 'bg-gradient-to-r from-blue-500 to-purple-600'
-                        }`}>
-                          {isConnected ? (
-                            <CheckCircle className="w-8 h-8 text-white" />
-                          ) : (
-                            <Icon className="w-8 h-8 text-white" />
-                          )}
+              {connectedAccounts.length > 0 ? (
+                <div className="space-y-3">
+                  {connectedAccounts.map((account, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 bg-white/5 rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-blue-500 rounded-full flex items-center justify-center">
+                          <CheckCircle className="w-5 h-5 text-white" />
                         </div>
-                        <h3 className="text-lg font-semibold mb-2">{option.name}</h3>
-                        <p className="text-sm text-muted-foreground mb-4">{option.description}</p>
-                        
-                        {isConnected ? (
-                          <div>
-                            <Button disabled className="w-full bg-green-500 mb-2">
-                              <CheckCircle className="w-4 h-4 mr-2" />
-                              Connected
-                            </Button>
-                            <p className="text-xs text-green-600 dark:text-green-400">
-                              {connectedAccount?.name}
-                            </p>
-                          </div>
-                        ) : (
-                          <Button className="w-full" onClick={openBankingModal}>
-                            <Plus className="w-4 h-4 mr-2" />
-                            Connect
-                          </Button>
-                        )}
+                        <div>
+                          <p className="text-white font-medium">{account.name}</p>
+                          <p className="text-white/60 text-sm capitalize">{account.type}</p>
+                        </div>
                       </div>
+                      <div className="text-green-400 text-sm">Connected</div>
                     </div>
-                  );
-                })}
-              </div>
-              
-              {connectedAccounts.length === 0 && (
+                  ))}
+                  <Button onClick={openBankingModal} className="w-full mt-4 bg-gradient-to-r from-blue-500 to-purple-600">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Account
+                  </Button>
+                </div>
+              ) : (
                 <div className="text-center py-8">
-                  <p className="text-muted-foreground mb-4">
-                    No accounts connected yet. Connect your first account to start tracking expenses.
-                  </p>
-                  <Button variant="outline" onClick={() => navigate('/receipt-scanner')}>
-                    Skip for Now
+                  <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Building className="w-8 h-8 text-white" />
+                  </div>
+                  <p className="text-white/70 mb-4">No accounts connected</p>
+                  <Button onClick={openBankingModal} className="bg-gradient-to-r from-blue-500 to-purple-600">
+                    <Plus className="w-4 h-4 mr-2" />
+                    Connect Account
                   </Button>
                 </div>
               )}
             </CardContent>
           </Card>
-        </div>
 
-        {/* Quick Stats */}
-        <div 
-          ref={statsRef}
-          className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12 transition-all duration-1000 ${
-            statsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
-          }`}
-        >
-          {quickStats.map((stat, index) => (
-            <Card 
-              key={index} 
-              className={`glass-card hover-lift floating-card animate-bounce-in animate-stagger-${index + 1}`}
-            >
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-muted-foreground">
-                  {stat.label}
-                </CardTitle>
-                <TrendingUp className={`h-4 w-4 animate-float ${stat.trend === 'up' ? 'text-green-500' : 'text-gray-500'}`} />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold text-foreground">{stat.value}</div>
-                <p className={`text-xs ${stat.trend === 'up' ? 'text-green-500' : 'text-gray-500'}`}>
-                  {stat.change} from last month
-                </p>
-              </CardContent>
-            </Card>
-          ))}
+          {/* Recent Transactions */}
+          <Card className="glass-card bg-white/5 backdrop-blur-xl border-white/10">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center">
+                <Activity className="w-5 h-5 mr-2 text-purple-400" />
+                Recent Transactions
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {recentTransactions.map((transaction, index) => (
+                  <div key={index} className="flex items-center justify-between p-3 bg-white/5 rounded-lg hover-lift">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+                        <Receipt className="w-5 h-5 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-white font-medium">{transaction.name}</p>
+                        <p className="text-white/60 text-sm">{transaction.time}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className={`font-bold ${transaction.color}`}>{transaction.amount}</p>
+                      <p className="text-white/60 text-xs">{transaction.category}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Budget Manager Section */}
-        <div className="mb-12">
+        <div className="mb-8">
           <BudgetManager />
         </div>
 
         {/* Main Features Grid */}
         <div 
           ref={featuresRef}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8"
         >
           <div className={`transition-all duration-700 ${featuresVisible[0] ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
             <FeatureCard
@@ -189,9 +239,12 @@ const Dashboard: React.FC = () => {
               title="Smart Receipt Scanner"
               description="Upload and analyze receipts with AI"
               onClick={() => navigate('/receipt-scanner')}
-              className="animate-float"
+              className="animate-float bg-gradient-to-br from-blue-500/10 to-purple-500/10 border-blue-500/20"
             >
-              <Button className="w-full mt-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700">
+              <Button 
+                className="w-full mt-4 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700"
+                onClick={() => navigate('/receipt-scanner')}
+              >
                 <Upload className="w-4 h-4 mr-2" />
                 Scan Receipt
               </Button>
@@ -204,13 +257,15 @@ const Dashboard: React.FC = () => {
               title="Spending Analytics"
               description="Track expenses and identify patterns"
               onClick={() => navigate('/analytics')}
-              className="animate-float"
+              className="animate-float bg-gradient-to-br from-green-500/10 to-blue-500/10 border-green-500/20"
             >
-              <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                <p className="text-sm text-muted-foreground text-center">
-                  Connect accounts to view analytics
-                </p>
-              </div>
+              <Button 
+                className="w-full mt-4 bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700"
+                onClick={() => navigate('/analytics')}
+              >
+                <BarChart3 className="w-4 h-4 mr-2" />
+                View Analytics
+              </Button>
             </FeatureCard>
           </div>
 
@@ -220,13 +275,15 @@ const Dashboard: React.FC = () => {
               title="AI Assistant"
               description="Chat with your financial advisor"
               onClick={() => navigate('/ai-assistant')}
-              className="animate-float"
+              className="animate-float bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/20"
             >
-              <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  "Connect your accounts first to get started"
-                </p>
-              </div>
+              <Button 
+                className="w-full mt-4 bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700"
+                onClick={() => navigate('/ai-assistant')}
+              >
+                <MessageSquare className="w-4 h-4 mr-2" />
+                Chat Now
+              </Button>
             </FeatureCard>
           </div>
 
@@ -236,9 +293,12 @@ const Dashboard: React.FC = () => {
               title="Budget Planner"
               description="Set and track spending limits"
               onClick={() => navigate('/analytics')}
-              className="animate-float"
+              className="animate-float bg-gradient-to-br from-orange-500/10 to-red-500/10 border-orange-500/20"
             >
-              <Button className="w-full mt-4 bg-gradient-to-r from-green-500 to-blue-600 hover:from-green-600 hover:to-blue-700 animate-glow">
+              <Button 
+                className="w-full mt-4 bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700 animate-glow"
+                onClick={() => navigate('/analytics')}
+              >
                 <Calculator className="w-4 h-4 mr-2" />
                 Create Budget
               </Button>
@@ -251,13 +311,15 @@ const Dashboard: React.FC = () => {
               title="Savings Goals"
               description="Set and track financial objectives"
               onClick={() => navigate('/analytics')}
-              className="animate-float"
+              className="animate-float bg-gradient-to-br from-cyan-500/10 to-blue-500/10 border-cyan-500/20"
             >
-              <div className="mt-4 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
-                <p className="text-sm text-muted-foreground text-center">
-                  Set your first savings goal
-                </p>
-              </div>
+              <Button 
+                className="w-full mt-4 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-600 hover:to-blue-700"
+                onClick={() => navigate('/analytics')}
+              >
+                <Target className="w-4 h-4 mr-2" />
+                Set Goals
+              </Button>
             </FeatureCard>
           </div>
 
@@ -267,59 +329,18 @@ const Dashboard: React.FC = () => {
               title="Smart Insights"
               description="AI-powered financial recommendations"
               onClick={() => navigate('/analytics')}
-              className="animate-float"
+              className="animate-float bg-gradient-to-br from-pink-500/10 to-rose-500/10 border-pink-500/20"
             >
-              <div className="mt-4 p-3 bg-blue-100 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <p className="text-sm text-blue-600 dark:text-blue-400 text-center">
-                  Connect accounts to get insights
-                </p>
-              </div>
+              <Button 
+                className="w-full mt-4 bg-gradient-to-r from-pink-500 to-rose-600 hover:from-pink-600 hover:to-rose-700"
+                onClick={() => navigate('/analytics')}
+              >
+                <DollarSign className="w-4 h-4 mr-2" />
+                Get Insights
+              </Button>
             </FeatureCard>
           </div>
         </div>
-
-        {/* Getting Started Guide */}
-        <Card className="glass-card animate-slide-up">
-          <CardHeader>
-            <CardTitle className="text-xl font-semibold">Getting Started</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                  <div>
-                    <p className="text-sm font-medium">Connect your first account</p>
-                    <p className="text-xs text-muted-foreground">Link a bank account or UPI app to start tracking</p>
-                  </div>
-                </div>
-                <Button size="sm" onClick={openBankingModal}>Connect</Button>
-              </div>
-              
-              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg opacity-50">
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-                  <div>
-                    <p className="text-sm font-medium">Upload your first receipt</p>
-                    <p className="text-xs text-muted-foreground">Scan a receipt to see AI analysis</p>
-                  </div>
-                </div>
-                <Button size="sm" variant="outline" disabled>Coming Next</Button>
-              </div>
-              
-              <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800/50 rounded-lg opacity-50">
-                <div className="flex items-center space-x-3">
-                  <div className="w-2 h-2 rounded-full bg-gray-400"></div>
-                  <div>
-                    <p className="text-sm font-medium">Set your budget goals</p>
-                    <p className="text-xs text-muted-foreground">Create spending limits and savings targets</p>
-                  </div>
-                </div>
-                <Button size="sm" variant="outline" disabled>Coming Soon</Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
 
       <BankingModal 
