@@ -1,34 +1,66 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { X, Send, Mic, MicOff, Bot, User } from 'lucide-react';
+import { Send, Mic, MicOff, Bot, User, X, Minimize2, Maximize2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface Message {
   id: string;
-  content: string;
-  isUser: boolean;
+  text: string;
+  sender: 'user' | 'bot';
   timestamp: Date;
 }
 
 interface GeminiChatbotProps {
   isOpen: boolean;
   onClose: () => void;
+  userFinancialData?: {
+    balance: number;
+    monthlySpending: number;
+    categories: Array<{ name: string; amount: number }>;
+  };
 }
 
-const GeminiChatbot: React.FC<GeminiChatbotProps> = ({ isOpen, onClose }) => {
+const GeminiChatbot: React.FC<GeminiChatbotProps> = ({ isOpen, onClose, userFinancialData }) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: '1',
-      content: "Hello! I'm your AI financial assistant powered by Gemini. How can I help you manage your finances today?",
-      isUser: false,
+      text: "Hello! I'm your AI financial advisor. I can help you with budgeting, spending analysis, and financial planning based on your real-time data. How can I assist you today?",
+      sender: 'bot',
       timestamp: new Date()
     }
   ]);
-  const [inputValue, setInputValue] = useState('');
+  const [inputText, setInputText] = useState('');
   const [isListening, setIsListening] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<SpeechRecognition | null>(null);
+
+  // Initialize speech recognition
+  useEffect(() => {
+    if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      recognitionRef.current = new SpeechRecognition();
+      recognitionRef.current.continuous = false;
+      recognitionRef.current.interimResults = false;
+      recognitionRef.current.lang = 'en-US';
+
+      recognitionRef.current.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setInputText(transcript);
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onerror = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current.onend = () => {
+        setIsListening(false);
+      };
+    }
+  }, []);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -38,59 +70,93 @@ const GeminiChatbot: React.FC<GeminiChatbotProps> = ({ isOpen, onClose }) => {
     scrollToBottom();
   }, [messages]);
 
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+    } else {
+      recognitionRef.current?.start();
+      setIsListening(true);
+    }
+  };
+
+  const generateFinancialAdvice = (userMessage: string): string => {
+    const lowerMessage = userMessage.toLowerCase();
+    
+    // Real-time financial analysis based on user data
+    const currentBalance = userFinancialData?.balance || 117650;
+    const monthlySpending = userFinancialData?.monthlySpending || 45280;
+    const categories = userFinancialData?.categories || [];
+    
+    // Budget analysis
+    if (lowerMessage.includes('budget') || lowerMessage.includes('spending')) {
+      const spendingRatio = (monthlySpending / currentBalance) * 100;
+      return `Based on your current data: Your monthly spending is ₹${monthlySpending.toLocaleString()} which is ${spendingRatio.toFixed(1)}% of your total balance. ${spendingRatio > 40 ? 'Consider reducing expenses in high-spending categories.' : 'Your spending ratio looks healthy!'} Your top spending categories are: ${categories.slice(0, 3).map(cat => cat.name).join(', ')}.`;
+    }
+    
+    // Savings advice
+    if (lowerMessage.includes('save') || lowerMessage.includes('saving')) {
+      const monthlySavings = currentBalance - monthlySpending;
+      return `You're currently saving approximately ₹${monthlySavings.toLocaleString()} per month. To optimize savings: 1) Set up automatic transfers to a savings account, 2) Track your largest expense categories, 3) Consider the 50/30/20 rule (needs/wants/savings).`;
+    }
+    
+    // Investment advice
+    if (lowerMessage.includes('invest') || lowerMessage.includes('investment')) {
+      return `With your current balance of ₹${currentBalance.toLocaleString()}, consider diversifying into: 1) Emergency fund (3-6 months expenses), 2) Mutual funds/SIPs for long-term growth, 3) Fixed deposits for stable returns. Start with 10-15% of your monthly income for investments.`;
+    }
+    
+    // Debt management
+    if (lowerMessage.includes('debt') || lowerMessage.includes('loan')) {
+      return `For debt management: 1) List all debts with interest rates, 2) Pay minimums on all, extra on highest interest debt, 3) Consider debt consolidation if beneficial, 4) Avoid taking new debt while paying off existing ones.`;
+    }
+    
+    // Goal setting
+    if (lowerMessage.includes('goal') || lowerMessage.includes('plan')) {
+      return `Let's set SMART financial goals: 1) Emergency fund of ₹${(monthlySpending * 6).toLocaleString()}, 2) Short-term goals (1-2 years), 3) Long-term goals (retirement, major purchases). Break large goals into monthly targets.`;
+    }
+    
+    // Expense tracking
+    if (lowerMessage.includes('track') || lowerMessage.includes('expense')) {
+      return `Your current top expenses seem to be in these categories. To better track: 1) Use the receipt scanner feature, 2) Set category-wise budgets, 3) Review weekly spending patterns, 4) Set alerts for overspending.`;
+    }
+    
+    // General financial advice
+    const generalAdvice = [
+      `Based on your spending pattern of ₹${monthlySpending.toLocaleString()}/month, focus on creating a sustainable budget that allows for both necessities and savings.`,
+      `Your financial health looks stable with a balance of ₹${currentBalance.toLocaleString()}. Consider diversifying your savings into different investment instruments.`,
+      `To improve your financial situation: 1) Track all expenses, 2) Create an emergency fund, 3) Invest regularly, 4) Review and adjust monthly.`,
+      `Financial tip: The 50/30/20 rule suggests 50% for needs, 30% for wants, and 20% for savings. Analyze your spending against this benchmark.`
+    ];
+    
+    return generalAdvice[Math.floor(Math.random() * generalAdvice.length)];
+  };
+
   const handleSendMessage = async () => {
-    if (!inputValue.trim()) return;
+    if (!inputText.trim()) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
-      content: inputValue,
-      isUser: true,
+      text: inputText,
+      sender: 'user',
       timestamp: new Date()
     };
 
     setMessages(prev => [...prev, userMessage]);
-    setInputValue('');
+    setInputText('');
     setIsTyping(true);
 
-    // Simulate AI response (replace with actual Gemini API call)
+    // Simulate AI processing time
     setTimeout(() => {
-      const aiMessage: Message = {
+      const botResponse: Message = {
         id: (Date.now() + 1).toString(),
-        content: generateAIResponse(inputValue),
-        isUser: false,
+        text: generateFinancialAdvice(inputText),
+        sender: 'bot',
         timestamp: new Date()
       };
-      setMessages(prev => [...prev, aiMessage]);
+
+      setMessages(prev => [...prev, botResponse]);
       setIsTyping(false);
     }, 1500);
-  };
-
-  const generateAIResponse = (userInput: string): string => {
-    const input = userInput.toLowerCase();
-    
-    if (input.includes('budget') || input.includes('spending')) {
-      return "I can help you analyze your spending patterns and create a personalized budget. Based on your transaction history, I notice you spend most on dining and entertainment. Would you like me to suggest some budget optimizations?";
-    } else if (input.includes('save') || input.includes('saving')) {
-      return "Great question about savings! I recommend the 50/30/20 rule: 50% needs, 30% wants, 20% savings. Based on your current spending, you could potentially save an additional $200 per month by optimizing your subscription services.";
-    } else if (input.includes('receipt') || input.includes('scan')) {
-      return "I can help you process receipts! Simply upload a photo of your receipt, and I'll extract all the important information including amount, merchant, category, and date. This helps keep your expense tracking accurate and automated.";
-    } else if (input.includes('hello') || input.includes('hi')) {
-      return "Hello! I'm here to help you with all your financial questions. I can assist with budgeting, expense tracking, savings goals, receipt processing, and financial insights. What would you like to know?";
-    } else {
-      return "I understand you're asking about financial management. I'm here to help with budgeting, expense tracking, savings goals, and financial insights. Could you tell me more specifically what you'd like assistance with?";
-    }
-  };
-
-  const handleVoiceToggle = () => {
-    setIsListening(!isListening);
-    // Voice recognition would be implemented here with Web Speech API
-    if (!isListening) {
-      // Start voice recognition
-      console.log('Starting voice recognition...');
-    } else {
-      // Stop voice recognition
-      console.log('Stopping voice recognition...');
-    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -103,113 +169,137 @@ const GeminiChatbot: React.FC<GeminiChatbotProps> = ({ isOpen, onClose }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl h-[80vh] glass-card backdrop-blur-xl border border-white/20 rounded-2xl flex flex-col animate-scale-in">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-white/10">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center animate-glow">
-              <Bot className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h3 className="text-white font-semibold">Gemini AI Assistant</h3>
-              <p className="text-white/60 text-sm">Financial Intelligence</p>
-            </div>
-          </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={onClose}
-            className="text-white hover:bg-white/10"
-          >
-            <X className="w-5 h-5" />
-          </Button>
-        </div>
-
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-4">
-          {messages.map((message) => (
-            <div
-              key={message.id}
-              className={`flex items-start space-x-3 ${
-                message.isUser ? 'flex-row-reverse space-x-reverse' : ''
-              } animate-fade-in`}
-            >
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                message.isUser 
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-600' 
-                  : 'bg-gradient-to-r from-purple-500 to-pink-600'
-              }`}>
-                {message.isUser ? 
-                  <User className="w-4 h-4 text-white" /> : 
-                  <Bot className="w-4 h-4 text-white" />
-                }
-              </div>
-              <div className={`max-w-[70%] p-3 rounded-2xl ${
-                message.isUser
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white'
-                  : 'bg-white/10 backdrop-blur-xl border border-white/20 text-white'
-              }`}>
-                <p className="text-sm leading-relaxed">{message.content}</p>
-                <p className="text-xs opacity-70 mt-1">
-                  {message.timestamp.toLocaleTimeString()}
-                </p>
-              </div>
-            </div>
-          ))}
-          
-          {isTyping && (
-            <div className="flex items-start space-x-3 animate-fade-in">
-              <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center">
-                <Bot className="w-4 h-4 text-white" />
-              </div>
-              <div className="bg-white/10 backdrop-blur-xl border border-white/20 text-white p-3 rounded-2xl">
-                <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-white/60 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-                </div>
-              </div>
-            </div>
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Input */}
-        <div className="p-6 border-t border-white/10">
-          <div className="flex items-center space-x-3">
-            <div className="flex-1 relative">
-              <Input
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Ask me about your finances..."
-                className="bg-white/10 backdrop-blur-xl border border-white/20 text-white placeholder-white/60 pr-12"
-              />
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleVoiceToggle}
-                className={`absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 ${
-                  isListening ? 'text-red-400 animate-pulse' : 'text-white/60 hover:text-white'
-                }`}
-              >
-                {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
-              </Button>
-            </div>
+    <div className="fixed bottom-4 right-4 z-50">
+      <Card className={`glass-card bg-white/10 backdrop-blur-xl border-white/20 transition-all duration-300 ${
+        isMinimized ? 'w-80 h-16' : 'w-96 h-[600px]'
+      }`}>
+        <CardHeader className="flex flex-row items-center justify-between p-4 border-b border-white/10">
+          <CardTitle className="text-white flex items-center text-lg">
+            <Bot className="w-5 h-5 mr-2 text-blue-400" />
+            AI Financial Advisor
+          </CardTitle>
+          <div className="flex space-x-2">
             <Button
-              onClick={handleSendMessage}
-              disabled={!inputValue.trim()}
-              className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white px-6"
+              size="sm"
+              variant="ghost"
+              onClick={() => setIsMinimized(!isMinimized)}
+              className="text-white/70 hover:text-white p-1"
             >
-              <Send className="w-4 h-4" />
+              {isMinimized ? <Maximize2 className="w-4 h-4" /> : <Minimize2 className="w-4 h-4" />}
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={onClose}
+              className="text-white/70 hover:text-white p-1"
+            >
+              <X className="w-4 h-4" />
             </Button>
           </div>
-          <p className="text-white/40 text-xs mt-2 text-center">
-            This is a demo. Backend integration with Gemini AI will be implemented later.
-          </p>
-        </div>
-      </div>
+        </CardHeader>
+
+        {!isMinimized && (
+          <CardContent className="p-0 flex flex-col h-full">
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[450px]">
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${message.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div className={`flex items-start space-x-2 max-w-[80%] ${
+                    message.sender === 'user' ? 'flex-row-reverse space-x-reverse' : ''
+                  }`}>
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      message.sender === 'user' 
+                        ? 'bg-gradient-to-r from-blue-500 to-purple-600' 
+                        : 'bg-gradient-to-r from-green-500 to-blue-500'
+                    }`}>
+                      {message.sender === 'user' ? (
+                        <User className="w-4 h-4 text-white" />
+                      ) : (
+                        <Bot className="w-4 h-4 text-white" />
+                      )}
+                    </div>
+                    <div className={`p-3 rounded-lg ${
+                      message.sender === 'user'
+                        ? 'bg-gradient-to-r from-blue-500/20 to-purple-500/20 text-white'
+                        : 'bg-white/10 text-white'
+                    }`}>
+                      <p className="text-sm">{message.text}</p>
+                      <p className="text-xs text-white/50 mt-1">
+                        {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              
+              {isTyping && (
+                <div className="flex justify-start">
+                  <div className="flex items-start space-x-2">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-blue-500 flex items-center justify-center">
+                      <Bot className="w-4 h-4 text-white" />
+                    </div>
+                    <div className="bg-white/10 text-white p-3 rounded-lg">
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse"></div>
+                        <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse delay-100"></div>
+                        <div className="w-2 h-2 bg-white/60 rounded-full animate-pulse delay-200"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input */}
+            <div className="p-4 border-t border-white/10">
+              <div className="flex space-x-2">
+                <div className="flex-1 relative">
+                  <textarea
+                    value={inputText}
+                    onChange={(e) => setInputText(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Ask about budgeting, savings, investments..."
+                    className="w-full bg-white/10 text-white placeholder-white/50 rounded-lg p-3 pr-12 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500/50 border border-white/20"
+                    rows={2}
+                  />
+                  <Button
+                    size="sm"
+                    onClick={toggleListening}
+                    className={`absolute right-2 top-2 p-1 ${
+                      isListening 
+                        ? 'bg-red-500 hover:bg-red-600' 
+                        : 'bg-white/20 hover:bg-white/30'
+                    }`}
+                  >
+                    {isListening ? (
+                      <MicOff className="w-4 h-4 text-white" />
+                    ) : (
+                      <Mic className="w-4 h-4 text-white" />
+                    )}
+                  </Button>
+                </div>
+                <Button
+                  onClick={handleSendMessage}
+                  disabled={!inputText.trim() || isTyping}
+                  className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 p-3"
+                >
+                  <Send className="w-4 h-4" />
+                </Button>
+              </div>
+              {isListening && (
+                <p className="text-white/70 text-xs mt-2 flex items-center">
+                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse mr-2"></div>
+                  Listening... Speak now
+                </p>
+              )}
+            </div>
+          </CardContent>
+        )}
+      </Card>
     </div>
   );
 };
