@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Receipt, BarChart3, MessageSquare, Wallet, Upload, TrendingUp, DollarSign, Target, PiggyBank, Calculator, CreditCard, Smartphone, Building, Plus, CheckCircle, ArrowUp, ArrowDown, Activity, Users, Zap, Eye, EyeOff } from 'lucide-react';
+import { Receipt, BarChart3, MessageSquare, Wallet, Upload, TrendingUp, DollarSign, Target, PiggyBank, Calculator, CreditCard, Smartphone, Building, Plus, CheckCircle, ArrowUp, ArrowDown, Activity, Users, Zap, Eye, EyeOff, LineChart, PieChart } from 'lucide-react';
 import FeatureCard from '@/components/FeatureCard';
 import BudgetManager from '@/components/BudgetManager';
 import BankingModal from '@/components/BankingModal';
@@ -9,6 +9,7 @@ import { useScrollAnimation, useStaggeredAnimation } from '@/hooks/useScrollAnim
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { LineChart as RechartsLineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart as RechartsPieChart, Cell, AreaChart, Area } from 'recharts';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -18,13 +19,60 @@ const Dashboard: React.FC = () => {
 
   const { ref: heroRef, isVisible: heroVisible } = useScrollAnimation();
   const { ref: statsRef, isVisible: statsVisible } = useScrollAnimation();
+  const { ref: chartsRef, isVisible: chartsVisible } = useScrollAnimation();
   const { containerRef: featuresRef, visibleItems: featuresVisible } = useStaggeredAnimation(6, 0.15);
 
+  // Sample data for charts
+  const spendingData = [
+    { name: 'Jan', amount: 2400, income: 3000 },
+    { name: 'Feb', amount: 1398, income: 3000 },
+    { name: 'Mar', amount: 9800, income: 3200 },
+    { name: 'Apr', amount: 3908, income: 3100 },
+    { name: 'May', amount: 4800, income: 3300 },
+    { name: 'Jun', amount: 3800, income: 3400 },
+  ];
+
+  const categoryData = [
+    { name: 'Food', value: 30, color: '#8884d8' },
+    { name: 'Transport', value: 20, color: '#82ca9d' },
+    { name: 'Entertainment', value: 15, color: '#ffc658' },
+    { name: 'Shopping', value: 25, color: '#ff7300' },
+    { name: 'Bills', value: 10, color: '#00ff88' },
+  ];
+
   const mainStats = [
-    { label: 'Total Balance', value: '₹1,17,650', change: '+12.5%', trend: 'up', gradient: 'from-blue-500 to-purple-600' },
-    { label: 'Monthly Spending', value: '₹45,280', change: '-5.2%', trend: 'down', gradient: 'from-purple-500 to-pink-600' },
-    { label: 'Savings Goal', value: '₹2,50,000', change: '68%', trend: 'up', gradient: 'from-green-500 to-blue-500' },
-    { label: 'Investments', value: '₹85,430', change: '+18.7%', trend: 'up', gradient: 'from-orange-500 to-red-500' },
+    { 
+      label: 'Total Balance', 
+      value: '₹1,17,650', 
+      change: '+12.5%', 
+      trend: 'up', 
+      gradient: 'from-blue-500 to-purple-600',
+      icon: Wallet
+    },
+    { 
+      label: 'Monthly Spending', 
+      value: '₹45,280', 
+      change: '-5.2%', 
+      trend: 'down', 
+      gradient: 'from-purple-500 to-pink-600',
+      icon: TrendingUp
+    },
+    { 
+      label: 'Savings Goal', 
+      value: '₹2,50,000', 
+      change: '68%', 
+      trend: 'up', 
+      gradient: 'from-green-500 to-blue-500',
+      icon: Target
+    },
+    { 
+      label: 'Investments', 
+      value: '₹85,430', 
+      change: '+18.7%', 
+      trend: 'up', 
+      gradient: 'from-orange-500 to-red-500',
+      icon: PieChart
+    },
   ];
 
   const recentTransactions = [
@@ -61,7 +109,7 @@ const Dashboard: React.FC = () => {
             heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           }`}
         >
-          <h1 className="text-4xl md:text-5xl font-bold gradient-text mb-4 animate-fade-in">
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-4 animate-fade-in text-glow">
             Financial Dashboard
           </h1>
           <p className="text-xl text-gray-300 max-w-3xl mx-auto animate-delayed-fade">
@@ -76,35 +124,127 @@ const Dashboard: React.FC = () => {
             statsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
           }`}
         >
-          {mainStats.map((stat, index) => (
-            <Card 
-              key={index} 
-              className={`bg-gradient-to-br ${stat.gradient} p-1 rounded-2xl hover-lift floating-card animate-bounce-in animate-stagger-${index + 1}`}
-            >
-              <div className="bg-black/20 backdrop-blur-xl rounded-xl p-6 h-full">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="p-2 bg-white/10 rounded-lg">
-                    {stat.trend === 'up' ? (
-                      <TrendingUp className="h-5 w-5 text-white" />
-                    ) : (
-                      <ArrowDown className="h-5 w-5 text-white" />
-                    )}
+          {mainStats.map((stat, index) => {
+            const Icon = stat.icon;
+            return (
+              <Card 
+                key={index} 
+                className={`bg-gradient-to-br ${stat.gradient} p-1 rounded-2xl hover-lift floating-card animate-bounce-in animate-stagger-${index + 1}`}
+              >
+                <div className="bg-black/20 backdrop-blur-xl rounded-xl p-6 h-full">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="p-2 bg-white/10 rounded-lg">
+                      <Icon className="h-5 w-5 text-white" />
+                    </div>
+                    <div className={`text-xs px-2 py-1 rounded-full ${
+                      stat.trend === 'up' ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'
+                    }`}>
+                      {stat.change}
+                    </div>
                   </div>
-                  <div className={`text-xs px-2 py-1 rounded-full ${
-                    stat.trend === 'up' ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'
-                  }`}>
-                    {stat.change}
+                  <div>
+                    <p className="text-white/70 text-sm mb-1 font-medium">{stat.label}</p>
+                    <p className="text-2xl font-bold text-white">
+                      {stat.label.includes('Balance') && !balanceVisible ? '••••••' : stat.value}
+                    </p>
                   </div>
                 </div>
-                <div>
-                  <p className="text-white/70 text-sm mb-1">{stat.label}</p>
-                  <p className="text-2xl font-bold text-white">
-                    {stat.label.includes('Balance') && !balanceVisible ? '••••••' : stat.value}
-                  </p>
-                </div>
+              </Card>
+            );
+          })}
+        </div>
+
+        {/* Charts Section */}
+        <div 
+          ref={chartsRef}
+          className={`grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8 transition-all duration-1000 ${
+            chartsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'
+          }`}
+        >
+          {/* Spending Trends Chart */}
+          <Card className="glass-card bg-white/5 backdrop-blur-xl border-white/10 animate-glow">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center">
+                <LineChart className="w-5 h-5 mr-2 text-blue-400" />
+                Spending Trends
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={250}>
+                <AreaChart data={spendingData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                  <XAxis dataKey="name" stroke="#ffffff60" />
+                  <YAxis stroke="#ffffff60" />
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'rgba(0,0,0,0.8)', 
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Area type="monotone" dataKey="amount" stroke="#8884d8" fill="url(#colorGradient)" />
+                  <Area type="monotone" dataKey="income" stroke="#82ca9d" fill="url(#incomeGradient)" />
+                  <defs>
+                    <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#8884d8" stopOpacity={0.1}/>
+                    </linearGradient>
+                    <linearGradient id="incomeGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#82ca9d" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#82ca9d" stopOpacity={0.1}/>
+                    </linearGradient>
+                  </defs>
+                </AreaChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+
+          {/* Category Breakdown */}
+          <Card className="glass-card bg-white/5 backdrop-blur-xl border-white/10 animate-glow">
+            <CardHeader>
+              <CardTitle className="text-white flex items-center">
+                <PieChart className="w-5 h-5 mr-2 text-purple-400" />
+                Spending Categories
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ResponsiveContainer width="100%" height={250}>
+                <RechartsPieChart>
+                  <Pie
+                    data={categoryData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={100}
+                    paddingAngle={5}
+                    dataKey="value"
+                  >
+                    {categoryData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ 
+                      backgroundColor: 'rgba(0,0,0,0.8)', 
+                      border: '1px solid rgba(255,255,255,0.2)',
+                      borderRadius: '8px'
+                    }}
+                  />
+                </RechartsPieChart>
+              </ResponsiveContainer>
+              <div className="grid grid-cols-2 gap-2 mt-4">
+                {categoryData.map((item, index) => (
+                  <div key={index} className="flex items-center space-x-2">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: item.color }}
+                    />
+                    <span className="text-white/70 text-sm">{item.name}</span>
+                  </div>
+                ))}
               </div>
-            </Card>
-          ))}
+            </CardContent>
+          </Card>
         </div>
 
         {/* Quick Actions */}

@@ -55,7 +55,8 @@ const Onboarding: React.FC = () => {
   };
 
   const validatePhone = (phone: string): boolean => {
-    const phoneRegex = /^\+?[\d\s\-\(\)]{10,}$/;
+    // More flexible phone validation - accepts various formats
+    const phoneRegex = /^[\+]?[\d\s\-\(\)]{10,15}$/;
     return phoneRegex.test(phone);
   };
 
@@ -76,23 +77,48 @@ const Onboarding: React.FC = () => {
   };
 
   const validateZipCode = (zipCode: string): boolean => {
-    const zipRegex = /^\d{5}(-\d{4})?$/;
+    // More flexible ZIP code validation
+    const zipRegex = /^\d{4,10}$/;
     return zipRegex.test(zipCode);
   };
 
   const validateAge = (dateOfBirth: string): boolean => {
+    if (!dateOfBirth) return false;
     const today = new Date();
     const birthDate = new Date(dateOfBirth);
     const age = today.getFullYear() - birthDate.getFullYear();
+    const monthDiff = today.getMonth() - birthDate.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      return age - 1 >= 18;
+    }
     return age >= 18;
   };
 
   const handleInputChange = (field: keyof FormData, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    setTouchedFields(prev => new Set(prev).add(field));
     
-    // Real-time validation
-    const errors: ValidationErrors = {};
+    // Clear validation errors when user starts typing
+    if (validationErrors[field]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
+  };
+
+  const handleBlur = (field: keyof FormData) => {
+    setTouchedFields(prev => new Set(prev).add(field));
+    validateField(field);
+  };
+
+  const validateField = (field: keyof FormData) => {
+    const value = formData[field];
+    const errors: ValidationErrors = { ...validationErrors };
+    
+    // Remove existing error for this field
+    delete errors[field];
     
     if (field === 'email' && value && !validateEmail(value)) {
       errors.email = 'Please enter a valid email address';
@@ -114,18 +140,14 @@ const Onboarding: React.FC = () => {
     }
     
     if (field === 'zipCode' && value && !validateZipCode(value)) {
-      errors.zipCode = 'Please enter a valid ZIP code (12345 or 12345-6789)';
+      errors.zipCode = 'Please enter a valid ZIP code';
     }
     
     if (field === 'dateOfBirth' && value && !validateAge(value)) {
       errors.dateOfBirth = 'You must be at least 18 years old';
     }
     
-    setValidationErrors(prev => ({ ...prev, ...errors }));
-  };
-
-  const handleBlur = (field: keyof FormData) => {
-    setTouchedFields(prev => new Set(prev).add(field));
+    setValidationErrors(errors);
   };
 
   const getPasswordStrength = () => {
@@ -140,7 +162,48 @@ const Onboarding: React.FC = () => {
   };
 
   const nextStep = () => {
-    if (step < 4) setStep(step + 1);
+    // Validate current step before proceeding
+    let isValid = true;
+    
+    if (step === 1) {
+      const requiredFields: (keyof FormData)[] = ['firstName', 'lastName', 'email', 'phone'];
+      requiredFields.forEach(field => {
+        if (!formData[field]) {
+          isValid = false;
+        } else {
+          validateField(field);
+        }
+      });
+    }
+    
+    if (step === 2) {
+      const requiredFields: (keyof FormData)[] = ['dateOfBirth', 'address', 'city', 'zipCode'];
+      requiredFields.forEach(field => {
+        if (!formData[field]) {
+          isValid = false;
+        } else {
+          validateField(field);
+        }
+      });
+    }
+    
+    if (step === 3) {
+      const requiredFields: (keyof FormData)[] = ['password', 'confirmPassword'];
+      requiredFields.forEach(field => {
+        if (!formData[field]) {
+          isValid = false;
+        } else {
+          validateField(field);
+        }
+      });
+    }
+    
+    // Check if there are any validation errors
+    const hasErrors = Object.keys(validationErrors).length > 0;
+    
+    if (isValid && !hasErrors && step < 4) {
+      setStep(step + 1);
+    }
   };
 
   const prevStep = () => {
@@ -199,10 +262,10 @@ const Onboarding: React.FC = () => {
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   onBlur={() => handleBlur('email')}
                   placeholder="your.email@example.com"
-                  className={`mt-2 ${validationErrors.email && touchedFields.has('email') ? 'border-red-500' : ''}`}
+                  className={`mt-2 ${validationErrors.email ? 'border-red-500' : ''}`}
                   required
                 />
-                {validationErrors.email && touchedFields.has('email') && (
+                {validationErrors.email && (
                   <p className="text-red-500 text-sm mt-1 flex items-center">
                     <AlertCircle className="w-4 h-4 mr-1" />
                     {validationErrors.email}
@@ -217,10 +280,10 @@ const Onboarding: React.FC = () => {
                   onChange={(e) => handleInputChange('phone', e.target.value)}
                   onBlur={() => handleBlur('phone')}
                   placeholder="+1 (555) 000-0000"
-                  className={`mt-2 ${validationErrors.phone && touchedFields.has('phone') ? 'border-red-500' : ''}`}
+                  className={`mt-2 ${validationErrors.phone ? 'border-red-500' : ''}`}
                   required
                 />
-                {validationErrors.phone && touchedFields.has('phone') && (
+                {validationErrors.phone && (
                   <p className="text-red-500 text-sm mt-1 flex items-center">
                     <AlertCircle className="w-4 h-4 mr-1" />
                     {validationErrors.phone}
@@ -251,10 +314,10 @@ const Onboarding: React.FC = () => {
                   value={formData.dateOfBirth}
                   onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
                   onBlur={() => handleBlur('dateOfBirth')}
-                  className={`mt-2 ${validationErrors.dateOfBirth && touchedFields.has('dateOfBirth') ? 'border-red-500' : ''}`}
+                  className={`mt-2 ${validationErrors.dateOfBirth ? 'border-red-500' : ''}`}
                   required
                 />
-                {validationErrors.dateOfBirth && touchedFields.has('dateOfBirth') && (
+                {validationErrors.dateOfBirth && (
                   <p className="text-red-500 text-sm mt-1 flex items-center">
                     <AlertCircle className="w-4 h-4 mr-1" />
                     {validationErrors.dateOfBirth}
@@ -294,10 +357,10 @@ const Onboarding: React.FC = () => {
                     onChange={(e) => handleInputChange('zipCode', e.target.value)}
                     onBlur={() => handleBlur('zipCode')}
                     placeholder="12345"
-                    className={`mt-2 ${validationErrors.zipCode && touchedFields.has('zipCode') ? 'border-red-500' : ''}`}
+                    className={`mt-2 ${validationErrors.zipCode ? 'border-red-500' : ''}`}
                     required
                   />
-                  {validationErrors.zipCode && touchedFields.has('zipCode') && (
+                  {validationErrors.zipCode && (
                     <p className="text-red-500 text-sm mt-1 flex items-center">
                       <AlertCircle className="w-4 h-4 mr-1" />
                       {validationErrors.zipCode}
@@ -332,7 +395,7 @@ const Onboarding: React.FC = () => {
                     onChange={(e) => handleInputChange('password', e.target.value)}
                     onBlur={() => handleBlur('password')}
                     placeholder="Create a strong password"
-                    className={`mt-2 pr-10 ${validationErrors.password && touchedFields.has('password') ? 'border-red-500' : ''}`}
+                    className={`mt-2 pr-10 ${validationErrors.password ? 'border-red-500' : ''}`}
                     required
                   />
                   <Button
@@ -350,7 +413,7 @@ const Onboarding: React.FC = () => {
                     Password strength: {passwordStrength.strength}
                   </p>
                 )}
-                {validationErrors.password && touchedFields.has('password') && (
+                {validationErrors.password && (
                   <p className="text-red-500 text-sm mt-1 flex items-center">
                     <AlertCircle className="w-4 h-4 mr-1" />
                     {validationErrors.password}
@@ -368,7 +431,7 @@ const Onboarding: React.FC = () => {
                     onChange={(e) => handleInputChange('confirmPassword', e.target.value)}
                     onBlur={() => handleBlur('confirmPassword')}
                     placeholder="Confirm your password"
-                    className={`mt-2 pr-10 ${validationErrors.confirmPassword && touchedFields.has('confirmPassword') ? 'border-red-500' : ''}`}
+                    className={`mt-2 pr-10 ${validationErrors.confirmPassword ? 'border-red-500' : ''}`}
                     required
                   />
                   <Button
@@ -387,7 +450,7 @@ const Onboarding: React.FC = () => {
                     Passwords match
                   </p>
                 )}
-                {validationErrors.confirmPassword && touchedFields.has('confirmPassword') && (
+                {validationErrors.confirmPassword && (
                   <p className="text-red-500 text-sm mt-1 flex items-center">
                     <AlertCircle className="w-4 h-4 mr-1" />
                     {validationErrors.confirmPassword}
@@ -470,15 +533,13 @@ const Onboarding: React.FC = () => {
   };
 
   const canProceed = () => {
-    const hasValidationErrors = Object.keys(validationErrors).length > 0;
-    
     switch (step) {
       case 1:
-        return formData.firstName && formData.lastName && formData.email && formData.phone && !hasValidationErrors;
+        return formData.firstName && formData.lastName && formData.email && formData.phone && Object.keys(validationErrors).length === 0;
       case 2:
-        return formData.dateOfBirth && formData.address && formData.city && formData.zipCode && !hasValidationErrors;
+        return formData.dateOfBirth && formData.address && formData.city && formData.zipCode && Object.keys(validationErrors).length === 0;
       case 3:
-        return formData.password && formData.confirmPassword && formData.password === formData.confirmPassword && !hasValidationErrors;
+        return formData.password && formData.confirmPassword && formData.password === formData.confirmPassword && Object.keys(validationErrors).length === 0;
       case 4:
         return true;
       default:

@@ -25,7 +25,7 @@ const Landing: React.FC = () => {
     return () => window.removeEventListener('mousemove', handleMouseMove);
   }, []);
 
-  // 3D Graph Animation
+  // Fixed 3D Graph Animation (removed spinning)
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -49,29 +49,29 @@ const Landing: React.FC = () => {
       ctx.fillStyle = gradient;
       ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      // Draw animated graph lines
+      // Draw smooth animated graph lines (fixed direction)
       ctx.strokeStyle = 'rgba(251, 191, 36, 0.8)';
       ctx.lineWidth = 2;
       ctx.beginPath();
       
       for (let x = 0; x < canvas.width; x += 10) {
-        const y = canvas.height / 2 + Math.sin((x + time) * 0.01) * 50;
+        const y = canvas.height / 2 + Math.sin((x + time) * 0.01) * 30;
         if (x === 0) ctx.moveTo(x, y);
         else ctx.lineTo(x, y);
       }
       ctx.stroke();
 
-      // Draw floating data points
+      // Draw floating data points (stable movement)
       ctx.fillStyle = 'rgba(34, 197, 94, 0.8)';
       for (let i = 0; i < 5; i++) {
-        const x = (canvas.width / 6) * (i + 1) + Math.sin(time * 0.005 + i) * 20;
-        const y = canvas.height / 2 + Math.cos(time * 0.003 + i) * 30;
+        const x = (canvas.width / 6) * (i + 1) + Math.sin(time * 0.002 + i) * 15;
+        const y = canvas.height / 2 + Math.cos(time * 0.002 + i) * 20;
         ctx.beginPath();
         ctx.arc(x, y, 4, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      time += 1;
+      time += 0.5; // Slower animation
       animationFrame = requestAnimationFrame(animate);
     };
 
@@ -92,7 +92,7 @@ const Landing: React.FC = () => {
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden particle-bg">
         <div 
-          className="absolute w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-float animate-morphing"
+          className="absolute w-96 h-96 bg-blue-500/20 rounded-full blur-3xl animate-float"
           style={{
             transform: `translate(${mousePosition.x * 0.02}px, ${mousePosition.y * 0.02}px)`,
             top: '10%',
@@ -109,7 +109,7 @@ const Landing: React.FC = () => {
           }}
         />
         <div 
-          className="absolute w-64 h-64 bg-orange-500/20 rounded-full blur-3xl animate-float animate-morphing"
+          className="absolute w-64 h-64 bg-orange-500/20 rounded-full blur-3xl animate-float"
           style={{
             transform: `translate(${mousePosition.x * 0.015}px, ${mousePosition.y * 0.015}px)`,
             bottom: '20%',
@@ -123,7 +123,7 @@ const Landing: React.FC = () => {
       <nav className="relative z-50 p-6">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-r from-orange-400 to-yellow-500 rounded-xl flex items-center justify-center animate-glow animate-rotate3d">
+            <div className="w-12 h-12 bg-gradient-to-r from-orange-400 to-yellow-500 rounded-xl flex items-center justify-center animate-glow">
               <span className="text-white font-bold text-xl">$</span>
             </div>
             <h1 className="text-2xl font-bold text-white text-glow">Project Raseed</h1>
@@ -238,7 +238,7 @@ const Landing: React.FC = () => {
             <div 
               className="glass-enhanced p-8 rounded-3xl border border-white/20 shadow-2xl hover:shadow-orange-500/20 transition-all duration-500 transform hover:scale-105 card-3d box-glow"
               style={{
-                transform: `perspective(1000px) rotateY(${mousePosition.x * 0.005}deg) rotateX(${mousePosition.y * -0.005}deg)`
+                transform: `perspective(1000px) rotateY(${mousePosition.x * 0.002}deg) rotateX(${mousePosition.y * -0.002}deg)`
               }}
             >
               {/* Wallet Header */}
