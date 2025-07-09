@@ -38,8 +38,8 @@ const GeminiChatbot: React.FC<GeminiChatbotProps> = ({ isOpen, onClose, userFina
 
   // Initialize speech recognition
   useEffect(() => {
-    if (typeof window !== 'undefined' && (window.SpeechRecognition || window.webkitSpeechRecognition)) {
-      const SpeechRecognitionConstructor = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (typeof window !== 'undefined') {
+      const SpeechRecognitionConstructor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
       if (SpeechRecognitionConstructor) {
         recognitionRef.current = new SpeechRecognitionConstructor();
         recognitionRef.current.continuous = false;
