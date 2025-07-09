@@ -39,7 +39,7 @@ const GeminiChatbot: React.FC<GeminiChatbotProps> = ({ isOpen, onClose, userFina
   // Initialize speech recognition
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const SpeechRecognitionConstructor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+      const SpeechRecognitionConstructor = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (SpeechRecognitionConstructor) {
         recognitionRef.current = new SpeechRecognitionConstructor();
         recognitionRef.current.continuous = false;
@@ -303,6 +303,110 @@ const GeminiChatbot: React.FC<GeminiChatbotProps> = ({ isOpen, onClose, userFina
       </Card>
     </div>
   );
+};
+
+const scrollToBottom = () => {
+  messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+};
+
+useEffect(() => {
+  scrollToBottom();
+}, [messages]);
+
+const toggleListening = () => {
+  if (isListening) {
+    recognitionRef.current?.stop();
+    setIsListening(false);
+  } else {
+    recognitionRef.current?.start();
+    setIsListening(true);
+  }
+};
+
+const generateFinancialAdvice = (userMessage: string): string => {
+  const lowerMessage = userMessage.toLowerCase();
+  
+  // Real-time financial analysis based on user data
+  const currentBalance = userFinancialData?.balance || 117650;
+  const monthlySpending = userFinancialData?.monthlySpending || 45280;
+  const categories = userFinancialData?.categories || [];
+  
+  // Budget analysis
+  if (lowerMessage.includes('budget') || lowerMessage.includes('spending')) {
+    const spendingRatio = (monthlySpending / currentBalance) * 100;
+    return `Based on your current data: Your monthly spending is ₹${monthlySpending.toLocaleString()} which is ${spendingRatio.toFixed(1)}% of your total balance. ${spendingRatio > 40 ? 'Consider reducing expenses in high-spending categories.' : 'Your spending ratio looks healthy!'} Your top spending categories are: ${categories.slice(0, 3).map(cat => cat.name).join(', ')}.`;
+  }
+  
+  // Savings advice
+  if (lowerMessage.includes('save') || lowerMessage.includes('saving')) {
+    const monthlySavings = currentBalance - monthlySpending;
+    return `You're currently saving approximately ₹${monthlySavings.toLocaleString()} per month. To optimize savings: 1) Set up automatic transfers to a savings account, 2) Track your largest expense categories, 3) Consider the 50/30/20 rule (needs/wants/savings).`;
+  }
+  
+  // Investment advice
+  if (lowerMessage.includes('invest') || lowerMessage.includes('investment')) {
+    return `With your current balance of ₹${currentBalance.toLocaleString()}, consider diversifying into: 1) Emergency fund (3-6 months expenses), 2) Mutual funds/SIPs for long-term growth, 3) Fixed deposits for stable returns. Start with 10-15% of your monthly income for investments.`;
+  }
+  
+  // Debt management
+  if (lowerMessage.includes('debt') || lowerMessage.includes('loan')) {
+    return `For debt management: 1) List all debts with interest rates, 2) Pay minimums on all, extra on highest interest debt, 3) Consider debt consolidation if beneficial, 4) Avoid taking new debt while paying off existing ones.`;
+  }
+  
+  // Goal setting
+  if (lowerMessage.includes('goal') || lowerMessage.includes('plan')) {
+    return `Let's set SMART financial goals: 1) Emergency fund of ₹${(monthlySpending * 6).toLocaleString()}, 2) Short-term goals (1-2 years), 3) Long-term goals (retirement, major purchases). Break large goals into monthly targets.`;
+  }
+  
+  // Expense tracking
+  if (lowerMessage.includes('track') || lowerMessage.includes('expense')) {
+    return `Your current top expenses seem to be in these categories. To better track: 1) Use the receipt scanner feature, 2) Set category-wise budgets, 3) Review weekly spending patterns, 4) Set alerts for overspending.`;
+  }
+  
+  // General financial advice
+  const generalAdvice = [
+    `Based on your spending pattern of ₹${monthlySpending.toLocaleString()}/month, focus on creating a sustainable budget that allows for both necessities and savings.`,
+    `Your financial health looks stable with a balance of ₹${currentBalance.toLocaleString()}. Consider diversifying your savings into different investment instruments.`,
+    `To improve your financial situation: 1) Track all expenses, 2) Create an emergency fund, 3) Invest regularly, 4) Review and adjust monthly.`,
+    `Financial tip: The 50/30/20 rule suggests 50% for needs, 30% for wants, and 20% for savings. Analyze your spending against this benchmark.`
+  ];
+  
+  return generalAdvice[Math.floor(Math.random() * generalAdvice.length)];
+};
+
+const handleSendMessage = async () => {
+  if (!inputText.trim()) return;
+
+  const userMessage: Message = {
+    id: Date.now().toString(),
+    text: inputText,
+    sender: 'user',
+    timestamp: new Date()
+  };
+
+  setMessages(prev => [...prev, userMessage]);
+  setInputText('');
+  setIsTyping(true);
+
+  // Simulate AI processing time
+  setTimeout(() => {
+    const botResponse: Message = {
+      id: (Date.now() + 1).toString(),
+      text: generateFinancialAdvice(inputText),
+      sender: 'bot',
+      timestamp: new Date()
+    };
+
+    setMessages(prev => [...prev, botResponse]);
+    setIsTyping(false);
+  }, 1500);
+};
+
+const handleKeyPress = (e: React.KeyboardEvent) => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    handleSendMessage();
+  }
 };
 
 export default GeminiChatbot;
