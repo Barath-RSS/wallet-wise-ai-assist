@@ -9,6 +9,7 @@ interface InteractiveCardProps {
   title?: string;
   icon?: React.ReactNode;
   gradient?: string;
+  style?: React.CSSProperties;
 }
 
 const InteractiveCard: React.FC<InteractiveCardProps> = ({ 
@@ -16,12 +17,14 @@ const InteractiveCard: React.FC<InteractiveCardProps> = ({
   className, 
   title, 
   icon, 
-  gradient = "from-blue-500/20 to-purple-600/20" 
+  gradient = "from-blue-500/20 to-purple-600/20",
+  style 
 }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
     <Card 
+      style={style}
       className={cn(
         "group relative overflow-hidden transition-all duration-500 hover-lift cursor-pointer",
         "bg-gradient-to-br glass-card backdrop-blur-xl border-white/20",
